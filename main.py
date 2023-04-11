@@ -467,6 +467,7 @@ def commence_search():
     print("Folder: " + file_path)
     print("URL: " + url.get())
     chrome_options = Options()
+    chrome_options.add_argument("--headless")
     driver = webdriver.Chrome(options=chrome_options)
     startingUrl = url.get()
     driver.get(startingUrl)
