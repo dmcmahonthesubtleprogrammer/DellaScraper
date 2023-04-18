@@ -3,6 +3,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 import time
 import random
+import math
 import string
 import requests
 import tkinter as tk
@@ -33,6 +34,7 @@ image_description = []
 image_folder_directories = []
 image_directories = []
 folder_path = ""
+startingPage = 1
 def browse_file():
     global file_path
     file_path = filedialog.askdirectory()
@@ -408,7 +410,17 @@ def PageLoop():
     getPageButton()
     while pageButton or pageButton == "SinglePage":
         resultsList = []
-        searchPage()
+        try:
+            if pagenum >= int(startingPage.get()):
+                try:
+                    if pagenum <= int(endingPage.get()):
+                        searchPage()
+                except Exception:
+                    print("No ending page.")
+                    searchPage()
+        except Exception:
+            print("No page number found.")
+            searchPage()
         pagenum = pagenum + 1
         try:
             pageButton = driver.find_element(
@@ -467,7 +479,7 @@ def commence_search():
     print("Folder: " + file_path)
     print("URL: " + url.get())
     chrome_options = Options()
-    #chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--headless")
     driver = webdriver.Chrome(options=chrome_options)
     startingUrl = url.get()
     driver.get(startingUrl)
@@ -534,6 +546,18 @@ label6 = tk.Label(
 label6.pack_forget()
 url = tk.Entry(window, highlightthickness=2, highlightbackground="black", width=50)
 url.pack()
+pageLabel = tk.Label(
+    window, text="Starting page", font=("Arial", 12)
+)
+pageLabel.pack()
+startingPage = tk.Entry(window, highlightthickness=2, highlightbackground="black", width=15)
+startingPage.pack()
+endPageLabel = tk.Label(
+    window, text="Ending page", font=("Arial", 12)
+)
+endPageLabel.pack()
+endingPage = tk.Entry(window, highlightthickness=2, highlightbackground="black", width=15)
+endingPage.pack()
 button = tk.Button(window, text="Start!", font=("Arial", 14))
 button["command"] = partial(collect_photos)
 button.pack(pady=10)
