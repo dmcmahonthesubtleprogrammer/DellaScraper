@@ -10,6 +10,7 @@ import tkinter as tk
 from tkinter import filedialog
 from functools import partial
 import os
+import asyncio
 import re
 
 file_path = None
@@ -35,6 +36,7 @@ image_folder_directories = []
 image_directories = []
 folder_path = ""
 startingPage = 1
+onAPage = False
 def browse_file():
     global file_path
     file_path = filedialog.askdirectory()
@@ -124,6 +126,21 @@ def getImage(folder,href):
                              .replace('"', "")
                              .replace(" ", "") + ".jpg")
     image_urls.append(href)
+async def itemTimer():
+    global onAPage
+    global huburl
+    print("Timer started")
+    await asyncio.sleep(30)
+    if onAPage:
+        print("If item isn't finished, returning to main page")
+        while driver.current_url != huburl:
+            driver.get(huburl)
+            onAPage = False
+async def itemTimerRunFunction():
+    task = asyncio.create_task(itemTimer())
+    print("Code below the timer")
+    await asyncio.sleep(1)
+    print("End of code")
 def getAllPicButtons():
     global nextButton
     global items
@@ -241,14 +258,18 @@ def getAllPicButtons():
         getImage(folder_path, driver.find_element(By.XPATH, "//img[@loading='lazy']").get_attribute("src"))
     except Exception as e:
         print("Failed: " + "")
+
 def navigateToLink(link):
     global driver
     global image_titles
     global image_description
     global folder_path
     global huburl
+    global onAPage
     original_nav = False
     driver.get(link)
+    onAPage = True
+    asyncio.run(itemTimerRunFunction())
     print("")
     paragraphs = []
     length = 10
@@ -289,6 +310,7 @@ def navigateToLink(link):
     driver.back()
     while driver.current_url != huburl:
         driver.get(huburl)
+        onAPage = False
 
 def LinkLoop():
     global picLinks
@@ -479,7 +501,7 @@ def commence_search():
     print("Folder: " + file_path)
     print("URL: " + url.get())
     chrome_options = Options()
-    chrome_options.add_argument("--headless")
+    #pchrome_options.add_argument("--headless")
     driver = webdriver.Chrome(options=chrome_options)
     startingUrl = url.get()
     driver.get(startingUrl)
