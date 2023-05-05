@@ -1,4 +1,5 @@
 from selenium import webdriver
+from selenium.common import TimeoutException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 import time
@@ -11,6 +12,7 @@ from tkinter import filedialog
 from functools import partial
 import os
 import asyncio
+import signal
 import re
 
 file_path = None
@@ -37,6 +39,7 @@ image_directories = []
 folder_path = ""
 startingPage = 1
 onAPage = False
+sellerName = ""
 def browse_file():
     global file_path
     file_path = filedialog.askdirectory()
@@ -130,7 +133,8 @@ async def itemTimer():
     global onAPage
     global huburl
     print("Timer started")
-    await asyncio.sleep(30)
+    time.sleep(30)
+    print("The timer has ended")
     if onAPage:
         print("If item isn't finished, returning to main page")
         while driver.current_url != huburl:
@@ -139,7 +143,6 @@ async def itemTimer():
 async def itemTimerRunFunction():
     task = asyncio.create_task(itemTimer())
     print("Code below the timer")
-    await asyncio.sleep(1)
     print("End of code")
 def getAllPicButtons():
     global nextButton
@@ -159,10 +162,25 @@ def getAllPicButtons():
         driver.get(driver.find_element(By.XPATH, "//span[@class='vi-inl-lnk vi-original-listing']").find_element(By.TAG_NAME, "a").get_attribute("href"))
     except Exception as e:
         print("")
+        try:
+            driver.get(driver.find_element(By.XPATH, "//span[@class='vi-inl-lnk vi-cvip-prel5']").find_element(By.TAG_NAME,
+                                                                                                           "a").get_attribute(
+            "href"))
+        except Exception:
+            print("")
+            try:
+                driver.get(
+                    driver.find_element(By.XPATH, "//div[@class='ux-image-carousel']").find_element(By.TAG_NAME,
+                                                                                                            "a").get_attribute(
+                        "href"))
+            except Exception:
+                print("")
+    """
     try:
         driver.get(driver.find_element(By.XPATH, "//span[@class='vi-inl-lnk vi-cvip-prel5']").find_element(By.TAG_NAME, "a").get_attribute("href"))
     except Exception as e:
         print("")
+    """
     element = None
     try:
         element = driver.find_element(By.XPATH, "//a[@class='vi-image-gallery__enlarge-link']")
@@ -172,8 +190,10 @@ def getAllPicButtons():
     if element != None:
         try:
             driver.find_element(By.XPATH, "//a[@class='vi-image-gallery__enlarge-link']").click()
+            #driver.back()
         except Exception as e:
-            print("")
+            print("Couldn't click and stuck")
+            #driver.back()
     else:
         try:
             driver.find_element(By.XPATH, "//div[@class='ux-image-carousel']").click()
@@ -258,7 +278,8 @@ def getAllPicButtons():
         getImage(folder_path, driver.find_element(By.XPATH, "//img[@loading='lazy']").get_attribute("src"))
     except Exception as e:
         print("Failed: " + "")
-
+def timeout_handler(signum, frame):
+    raise TimeoutException()
 def navigateToLink(link):
     global driver
     global image_titles
@@ -266,10 +287,10 @@ def navigateToLink(link):
     global folder_path
     global huburl
     global onAPage
+    global sellerName
     original_nav = False
     driver.get(link)
     onAPage = True
-    asyncio.run(itemTimerRunFunction())
     print("")
     paragraphs = []
     length = 10
@@ -277,7 +298,18 @@ def navigateToLink(link):
     random_string = "".join(
         random.choice(characters) for i in range(length)
     )
-    folder_path = (file_path + "/" + driver.title.replace("?", "")
+    sellerElement = None
+    try:
+        sellerElement = driver.find_element(By.XPATH, '//span[@class="mbg-nw"]')
+    except Exception:
+        print()
+    pageSeller = ""
+    try:
+        pageSeller = sellerElement.text
+    except Exception:
+        print()
+    if sellerName == pageSeller or sellerName == "":
+        folder_path = (file_path + "/" + driver.title.replace("?", "")
                    .replace("|", "")
                    .replace("\\", "")
                    .replace("/", "")
@@ -286,31 +318,32 @@ def navigateToLink(link):
                    .replace(">", "")
                    .replace("*", "")
                    .replace('"', "") + "-folder-" + random_string + "/")
-    image_folder_directories.append(folder_path)
-    image_titles.append(driver.title)
-    print(driver.title)
-    print(folder_path)
-    paragraph = []
-    paragraphsHtml = []
-    try:
-        driver.refresh()
-        driver.get(driver.find_element(By.ID,"desc_ifr").get_attribute("src"))
+        image_folder_directories.append(folder_path)
+        image_titles.append(driver.title)
+        print(driver.title)
+        print(folder_path)
+        paragraph = []
+        paragraphsHtml = []
         try:
-            paragraphsHtml = driver.find_element(By.TAG_NAME,"body").get_attribute("innerHTML")
-            image_description.append(paragraphsHtml)
+            driver.refresh()
+            driver.get(driver.find_element(By.ID,"desc_ifr").get_attribute("src"))
+            try:
+                paragraphsHtml = driver.find_element(By.TAG_NAME,"body").get_attribute("innerHTML")
+                image_description.append(paragraphsHtml)
+            except Exception:
+                print("Paragraphs not found")
+            driver.back()
         except Exception:
-            print("Paragraphs not found")
+            print("Description not found")
+            paragraphsHtml = ["<p> No description found for this item </p>"]
+            image_description.append(paragraphsHtml)
+        print("Gonna run pics now")
+        getAllPicButtons()
         driver.back()
-    except Exception:
-        print("Description not found")
-        paragraphsHtml = ["<p> No description found for this item </p>"]
-        image_description.append(paragraphsHtml)
-    print("Gonna run pics now")
-    getAllPicButtons()
-    driver.back()
     while driver.current_url != huburl:
         driver.get(huburl)
         onAPage = False
+    print("Made it back")
 
 def LinkLoop():
     global picLinks
@@ -496,6 +529,7 @@ def commence_search():
     global url
     global file_path
     global folder_path
+    global sellerName
     print("Collecting images from search results, please wait...")
     pagenum = 1
     print("Folder: " + file_path)
@@ -506,6 +540,11 @@ def commence_search():
     startingUrl = url.get()
     driver.get(startingUrl)
     handleHoodedChildAtStart()
+    try:
+        element = driver.find_element(By.XPATH,'//div[@class="str-seller-card__store-name"]')
+        sellerName = element.text
+    except Exception:
+        print()
     PageLoop()
     driver.close()
 def validate_fields():
