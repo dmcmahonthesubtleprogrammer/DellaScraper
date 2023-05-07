@@ -40,6 +40,7 @@ folder_path = ""
 startingPage = 1
 onAPage = False
 sellerName = ""
+picLinks = []
 def browse_file():
     global file_path
     file_path = filedialog.askdirectory()
@@ -400,6 +401,7 @@ def searchPage():
     global image_titles
     global image_directories
     global folder_path
+    global picLinks
     huburl = driver.current_url
     ScrollDown()
     getResultsList()
@@ -461,6 +463,7 @@ def PageLoop():
     global resultsList
     global folder_path
     global huburl
+    global picLinks
     ScrollDown()
     getPageButton()
     while pageButton or pageButton == "SinglePage":
@@ -530,6 +533,7 @@ def commence_search():
     global file_path
     global folder_path
     global sellerName
+    global picLinks
     print("Collecting images from search results, please wait...")
     pagenum = 1
     print("Folder: " + file_path)
@@ -549,6 +553,7 @@ def commence_search():
     driver.close()
 def validate_fields():
     global folder_path
+    global picLinks
     if (
             file_path is None
             or file_path == ""
@@ -569,6 +574,7 @@ def validate_fields():
         commence_search()
 def collect_photos():
     global folder_path
+    global picLinks
     validate_fields()
 
 window = tk.Tk()
