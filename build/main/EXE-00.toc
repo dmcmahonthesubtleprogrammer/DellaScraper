@@ -3093,7 +3093,7 @@
  [],
  False,
  False,
- 1683493300,
+ 1683494459,
  [('run.exe',
    'D:\\PythonProjects\\DellaScraper\\lib\\site-packages\\PyInstaller\\bootloader\\Windows-64bit-intel\\run.exe',
    'EXECUTABLE')])
