@@ -2,6 +2,7 @@ from selenium import webdriver
 from selenium.common import TimeoutException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
+import pyautogui
 import time
 import random
 import math
@@ -72,11 +73,13 @@ def getItems(maxElement,directory):
     characters = string.ascii_letters + string.digits
     random_string_image = ""
     while items > itemnum:
+        pyautogui.moveRel(random.randint(-1, 1), random.randint(-1, 1), duration=0.1)
         print(itemnum)
         buttons = maxElement.find_elements(
             By.TAG_NAME, "button"
         )
         for button in buttons:
+            pyautogui.moveRel(random.randint(-1, 1), random.randint(-1, 1), duration=0.1)
             if "btn-next" in button.get_attribute("class"):
                 button.click()
                 images = driver.find_element(
@@ -85,6 +88,7 @@ def getItems(maxElement,directory):
                 ).find_elements(By.TAG_NAME, "img")
                 itemnum = itemnum + 1
                 for image in images:
+                    pyautogui.moveRel(random.randint(-1, 1), random.randint(-1, 1), duration=0.1)
                     if items == itemnum:
                         if "/s-l64.jpg" not in str(image.get_attribute("src")):
                             random_string_image = "".join(
@@ -114,6 +118,7 @@ def getItems(maxElement,directory):
 def getImage(folder,href):
     global image_urls
     global image_directories
+    pyautogui.moveRel(random.randint(-1, 1), random.randint(-1, 1), duration=0.1)
     length = 10
     characters = string.ascii_letters + string.digits
     random_string = "".join(
@@ -145,6 +150,42 @@ async def itemTimerRunFunction():
     task = asyncio.create_task(itemTimer())
     print("Code below the timer")
     print("End of code")
+def scrollThroughThePics():
+    #print(driver.find_element(By.XPATH, "//div[@class='ux-image-carousel-item active image']").find_element(By.TAG_NAME, "img").get_attribute("src"))
+    getImage(folder_path, driver.find_element(By.XPATH, "//div[@class='ux-image-carousel-item active image']").find_element(By.TAG_NAME, "img").get_attribute("src"))
+    try:
+        for i, button in enumerate(
+                driver.find_elements(By.XPATH, "//div[@class='ux-image-carousel-item image']")):
+            if(button.find_element(By.TAG_NAME, "img").get_attribute("src") is not None):
+                #print(button.find_element(By.TAG_NAME, "img").get_attribute("src"))
+                getImage(folder_path,button.find_element(By.TAG_NAME, "img").get_attribute("src"))
+            if(button.find_element(By.TAG_NAME, "img").get_attribute("data-src") is not None):
+                #print(button.find_element(By.TAG_NAME, "img").get_attribute("data-src"))
+                getImage(folder_path, button.find_element(By.TAG_NAME, "img").get_attribute("data-src"))
+        print("Pics found")
+        driver.back()
+    except Exception:
+        print("Pics not found")
+def goToOriginalListings():
+    try:
+        print("searching for original listing")
+        driver.refresh()
+        driver.get(
+            driver.find_element(By.XPATH, "//span[@class='vi-inl-lnk vi-original-listing']").find_element(By.TAG_NAME,
+                                                                                                          "a").get_attribute(
+                "href"))
+        print("Original listing")
+    except Exception as e:
+        print("Couldn't find original listing. Going to try to look harder...")
+    element = None
+    try:
+        driver.find_element(By.XPATH, "//div[@class='ux-image-carousel']").click()
+        print("link clicked")
+        scrollThroughThePics()
+        driver.back()
+    except Exception as e:
+        print("Couldn't click the link :(")
+    driver.back()
 def getAllPicButtons():
     global nextButton
     global items
@@ -159,126 +200,9 @@ def getAllPicButtons():
     items = 0
     itemnum = 0
     original_link_clicked = False
-    try:
-        driver.get(driver.find_element(By.XPATH, "//span[@class='vi-inl-lnk vi-original-listing']").find_element(By.TAG_NAME, "a").get_attribute("href"))
-    except Exception as e:
-        print("")
-        try:
-            driver.get(driver.find_element(By.XPATH, "//span[@class='vi-inl-lnk vi-cvip-prel5']").find_element(By.TAG_NAME,
-                                                                                                           "a").get_attribute(
-            "href"))
-        except Exception:
-            print("")
-            try:
-                driver.get(
-                    driver.find_element(By.XPATH, "//div[@class='ux-image-carousel']").find_element(By.TAG_NAME,
-                                                                                                            "a").get_attribute(
-                        "href"))
-            except Exception:
-                print("")
-    """
-    try:
-        driver.get(driver.find_element(By.XPATH, "//span[@class='vi-inl-lnk vi-cvip-prel5']").find_element(By.TAG_NAME, "a").get_attribute("href"))
-    except Exception as e:
-        print("")
-    """
-    element = None
-    try:
-        element = driver.find_element(By.XPATH, "//a[@class='vi-image-gallery__enlarge-link']")
-    except Exception as e:
-        print("")
-        element = None
-    if element != None:
-        try:
-            driver.find_element(By.XPATH, "//a[@class='vi-image-gallery__enlarge-link']").click()
-            #driver.back()
-        except Exception as e:
-            print("Couldn't click and stuck")
-            #driver.back()
-    else:
-        try:
-            driver.find_element(By.XPATH, "//div[@class='ux-image-carousel']").click()
-        except Exception:
-            print("")
-        try:
-            driver.get(driver.find_element(By.XPATH, "//div[@class='nodestar-item-card-details__image-table']").find_element(By.TAG_NAME, "a").get_attribute("href"))
-        except Exception:
-            print("")
-        print(driver.find_elements(By.TAG_NAME, "img"))
-        print(len(driver.find_elements(By.XPATH, "//button[@class='ux-image-filmstrip-carousel-item image']")))
-        if len(driver.find_elements(By.XPATH, "//button[@class='ux-image-filmstrip-carousel-item image']")) == 0:
-            print()
-        else:
-            for i, button in enumerate(driver.find_elements(By.XPATH, "//button[@class='ux-image-filmstrip-carousel-item image']")):
-                print("Index: " + str(i))
-                print("Length: " + str(len(driver.find_elements(By.XPATH, "//button[@class='ux-image-filmstrip-carousel-item image']"))-1))
-                try:
-                    button.click()
-                except Exception:
-                    print("Failed to click button")
-                if i == len(driver.find_elements(By.XPATH, "//button[@class='ux-image-filmstrip-carousel-item image']"))-1:
-                    for img, image in enumerate(driver.find_elements(By.TAG_NAME, "img")):
-                        try:
-                            if "s-l1600.jpg" in image.get_attribute("src"):
-                                print(image.get_attribute("src"))
-                                try:
-                                    print("")
-                                    getImage(folder_path, image.get_attribute("src"))
-                                    print("")
-                                except Exception as e:
-                                    print("")
-                        except Exception:
-                            print("")
-                        try:
-                            if "s-l1600.png" in image.get_attribute("src"):
-                                print(image.get_attribute("src"))
-                                try:
-                                    getImage(folder_path, image.get_attribute("src"))
-                                except Exception:
-                                    print("")
-                        except Exception:
-                            print()
-                        try:
-                            if "s-l1600.jpeg" in image.get_attribute("src"):
-                                print(image.get_attribute("src"))
-                                try:
-                                    getImage(folder_path, image.get_attribute("src"))
-                                except Exception:
-                                    print("")
-                        except Exception:
-                            print()
-                        try:
-                            if "s-l300.jpg" in image.get_attribute("src"):
-                                print(image.get_attribute("src"))
-                                try:
-                                    getImage(folder_path, image.get_attribute("src"))
-                                except Exception:
-                                    print("")
-                        except Exception:
-                            print()
-                        try:
-                            if "s-l300.jpeg" in image.get_attribute("src"):
-                                print(image.get_attribute("src"))
-                                try:
-                                    getImage(folder_path, image.get_attribute("src"))
-                                except Exception:
-                                    print("")
-                        except Exception:
-                            print()
-                        try:
-                            if "s-l300.png" in image.get_attribute("src"):
-                                print(image.get_attribute("src"))
-                                try:
-                                    getImage(folder_path, image.get_attribute("src"))
-                                except Exception:
-                                    print("")
-                        except Exception:
-                            print()
-    try:
-        print(driver.find_element(By.XPATH, "//img[@loading='lazy']").get_attribute("src"))
-        getImage(folder_path, driver.find_element(By.XPATH, "//img[@loading='lazy']").get_attribute("src"))
-    except Exception as e:
-        print("Failed: " + "")
+    print("searching for original listing")
+    goToOriginalListings()
+    driver.back()
 def timeout_handler(signum, frame):
     raise TimeoutException()
 def navigateToLink(link):
@@ -292,7 +216,6 @@ def navigateToLink(link):
     original_nav = False
     driver.get(link)
     onAPage = True
-    print("")
     paragraphs = []
     length = 10
     characters = string.ascii_letters + string.digits
@@ -329,8 +252,11 @@ def navigateToLink(link):
             driver.refresh()
             driver.get(driver.find_element(By.ID,"desc_ifr").get_attribute("src"))
             try:
+                print("Getting paragraphs")
                 paragraphsHtml = driver.find_element(By.TAG_NAME,"body").get_attribute("innerHTML")
+                print("Adding paragraphs")
                 image_description.append(paragraphsHtml)
+                print("Paragraphs found")
             except Exception:
                 print("Paragraphs not found")
             driver.back()
@@ -357,6 +283,7 @@ def LinkLoop():
     label6.pack()
     window.update()
     for link in picLinks:
+        pyautogui.moveRel(1, 0, duration=0.1)
         navigateToLink(link)
         picLinkCount = picLinkCount + 1
         label6.config(text=str(picLinkCount) + " of " + str(len(picLinks)) + " items scanned on page " + str(pagenum), fg="green")
@@ -379,6 +306,7 @@ def getLinks():
                 and "sch" not in link.get_attribute("href")
                 and "SellLikeItem" not in link.get_attribute("href")
         ):
+            pyautogui.moveRel(random.randint(-1, 1), random.randint(-1, 1), duration=0.1)
             picLinks.append(link.get_attribute("href"))
 def ScrollDown():
     global new_height
@@ -408,6 +336,7 @@ def searchPage():
     getLinks()
     LinkLoop()
     for i, title in enumerate(image_titles):
+        pyautogui.moveRel(1, 0, duration=0.1)
         try:
             os.makedirs(image_folder_directories[i])
         except Exception:
@@ -430,6 +359,7 @@ def searchPage():
     window.update()
     print(len(image_urls))
     for i, image in enumerate(image_urls):
+        pyautogui.moveRel(random.randint(-1, 1), random.randint(-1, 1), duration=0.1)
         print("File directory: " + image_directories[i])
         try:
             response = requests.get(image)
@@ -541,6 +471,7 @@ def commence_search():
     chrome_options = Options()
     #pchrome_options.add_argument("--headless")
     driver = webdriver.Chrome(options=chrome_options)
+    driver.set_page_load_timeout(15)
     startingUrl = url.get()
     driver.get(startingUrl)
     handleHoodedChildAtStart()
